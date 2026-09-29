@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgriSamarth | Kisan DPI Digital Advisory & Diagnostic Network</title>
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet GIS Mapping CSS/JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            kisan: {
+              50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 500: '#22c55e',
+              600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d', dark: '#0e3a1f'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- PRINT OPTIMIZATION STYLES (PDF Advisory Slip) -->
+  <style>
+    @media print {
+      body { background: white !important; color: black !important; }
+      header, section.lg\:col-span-5, #chatFloatingWidget, #cameraModal, .no-print { display: none !important; }
+      main { margin: 0 !important; max-width: 100% !important; padding: 0 !important; }
+      section.lg\:col-span-7 { width: 100% !important; }
+      .shadow-xl { box-shadow: none !important; border: 1px solid #ccc !important; }
+      .print-header { display: block !important; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
+    }
+    .print-header { display: none; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+  <!-- Navigation Bar -->
+  <header class="bg-gradient-to-r from-kisan-900 via-kisan-800 to-kisan-dark text-white shadow-xl sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="bg-gradient-to-br from-emerald-400 to-kisan-600 p-2.5 rounded-2xl shadow-lg ring-2 ring-white/20">
+          <i class="fa-solid fa-wheat-awn text-2xl text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-extrabold tracking-tight">AgriSamarth</h1>
+            <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30">AgriStack DPI Node</span>
+          </div>
+          <p class="text-xs text-kisan-200" data-i18n="brand_sub">Interoperable AI Agronomy & Vision Diagnostics</p>
+        </div>
+      </div>
+
+      <!-- Live Weather Telemetry Badge & Header Language Selector -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        
+        <div id="weatherBadge" class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs text-emerald-100">
+          <i class="fa-solid fa-satellite-dish text-amber-300 text-sm animate-pulse"></i>
+          <span>Satellite Temp: <strong id="liveTemp">31.5°C</strong></span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+          <i class="fa-solid fa-language text-emerald-300"></i>
+          <select id="headerLangCode" onchange="setLanguage(this.value)" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer">
+            <option value="hi" class="text-slate-900">हिंदी (Hindi)</option>
+            <option value="gu" class="text-slate-900">ગુજરાતી (Gujarati)</option>
+            <option value="mr" class="text-slate-900">मराठी (Marathi)</option>
+            <option value="en" class="text-slate-900">English</option>
+          </select>
+        </div>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Printable Slip Header -->
+  <div class="print-header">
+    <h1 class="text-2xl font-bold text-emerald-800">AgriStack Official Advisory Slip — AgriSamarth Node</h1>
+    <p class="text-xs text-slate-600">Generated under National Digital Agriculture Framework</p>
+  </div>
+
+  <!-- Main Grid Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
+    
+    <!-- LEFT PANEL: REGISTRY & INPUT CONTROLS (5 Cols) -->
+    <section class="lg:col-span-5 space-y-6 no-print">
+      
+      <!-- CARD 1: Farmer Identity & Registry Lookup -->
+      <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 space-y-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-kisan-100 text-kisan-700 flex items-center justify-center font-bold text-lg">
+              <i class="fa-solid fa-id-card"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base" data-i18n="card1_title">AgriStack Identity & Soil Profile</h3>
+              <p class="text-xs text-slate-500" data-i18n="card1_sub">Select or type Farmer ID to auto-sync registry</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preset Farmers -->
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5" data-i18n="preset_label">Preset Farmer Records</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button type="button" onclick="selectFarmer('FID-8839201')" class="p-2 border rounded-xl hover:bg-emerald-50 text-left font-semibold border-slate-200">
+              🌾 Rameshchandra (GJ)
+            </button>
+            <button type="button" onclick="selectFarmer('FID-9940123')" class="p-2 border rounded-xl hover:bg-emerald-50 text-left font-semibold border-slate-200">
+              🌾 Harpreet Singh (PB)
+            </button>
+            <button type="button" onclick="selectFarmer('FID-7712045')" class="p-2 border rounded-xl hover:bg-emerald-50 text-left font-semibold border-slate-200">
+              🌾 Vijay Deshmukh (MH)
+            </button>
+            <button type="button" onclick="selectFarmer('FID-3301928')" class="p-2 border rounded-xl hover:bg-emerald-50 text-left font-semibold border-slate-200">
+              🌾 Gowda Basavaraj (KA)
+            </button>
+          </div>
+        </div>
+
+        <form id="advisoryForm" class="space-y-3.5">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="farmer_id_lbl">Farmer ID</label>
+              <input type="text" id="farmerId" value="FID-8839201" onchange="fetchFarmerRegistry()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs font-bold focus:ring-2 focus:ring-kisan-600 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="state_node_lbl">State Node</label>
+              <select id="stateCode" onchange="onStateChange()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs focus:ring-2 focus:ring-kisan-600 outline-none">
+                <option value="IN-GJ">Gujarat (IN-GJ)</option>
+                <option value="IN-PB">Punjab (IN-PB)</option>
+                <option value="IN-MH">Maharashtra (IN-MH)</option>
+                <option value="IN-KA">Karnataka (IN-KA)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Verified Identity Info Badge -->
+          <div id="farmerInfoBox" class="bg-emerald-50/80 border border-emerald-200 p-3 rounded-2xl text-xs space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-kisan-900" id="regName">Rameshchandra Patel</span>
+              <span class="bg-kisan-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold" data-i18n="verified_badge">Registry Verified</span>
+            </div>
+            <p class="text-slate-600 text-[11px]"><span data-i18n="land_holding_lbl">Land Holding</span>: <strong id="regAcres">4.2 Acres</strong> | <span data-i18n="history_lbl">History</span>: <span id="regCrop">Groundnut & Cotton</span></p>
+          </div>
+
+          <!-- SOIL TYPE & CROP QUALITY PARAMETERS -->
+          <div class="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1" data-i18n="soil_type_lbl">Types of Soil</label>
+                <select id="soilType" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-kisan-600 outline-none">
+                  <option value="Black Cotton Soil">Black Cotton Soil</option>
+                  <option value="Alluvial Soil">Alluvial Soil</option>
+                  <option value="Red / Laterite Soil">Red / Laterite Soil</option>
+                  <option value="Sandy Loam">Sandy Loam</option>
+                  <option value="Clay Loam">Clay Loam</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1" data-i18n="crop_quality_lbl">Crop Quality Target</label>
+                <select id="cropQuality" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-kisan-600 outline-none">
+                  <option value="Grade A (Export / Premium)">Grade A (Export / Premium)</option>
+                  <option value="Grade B (Domestic Commercial)">Grade B (Domestic Commercial)</option>
+                  <option value="Grade C (Local Market / Seed)">Grade C (Local Market / Seed)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-700" data-i18n="ndvi_lbl">Crop Health Index (NDVI)</span>
+                <span id="ndviDisplay" class="text-kisan-700 font-extrabold">0.68 (Good)</span>
+              </div>
+              <input type="range" id="ndviVal" min="0" max="1" step="0.01" value="0.68" oninput="updateSliders()" class="w-full accent-kisan-600 cursor-pointer"/>
+            </div>
+
+            <!-- AUTOMATIC SATELLITE DETECTED METRICS DISPLAY -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-emerald-100/60 p-2 rounded-xl border border-emerald-300 text-center">
+                <label class="block text-[10px] font-bold text-emerald-900 mb-0.5"><i class="fa-solid fa-satellite"></i> Satellite pH</label>
+                <input type="number" step="0.1" id="phVal" value="6.8" readonly class="w-full bg-transparent font-extrabold text-slate-900 text-xs text-center border-none outline-none" />
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-slate-300 text-center">
+                <label class="block text-[10px] font-bold text-slate-700 mb-0.5" data-i18n="oc_lbl">Organic Carbon %</label>
+                <input type="number" step="0.05" id="ocVal" value="0.75" class="w-full bg-white font-bold text-xs text-center outline-none" />
+              </div>
+              <div class="bg-amber-100/60 p-2 rounded-xl border border-amber-300 text-center">
+                <label class="block text-[10px] font-bold text-amber-900 mb-0.5"><i class="fa-solid fa-sun"></i> Satellite Temp</label>
+                <input type="number" step="0.5" id="tempOverride" value="31.5" readonly class="w-full bg-transparent font-extrabold text-slate-900 text-xs text-center border-none outline-none" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Interactive GIS Map Overlay -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-[11px] font-bold text-slate-600">
+              <span class="uppercase tracking-wider" data-i18n="gis_lbl">Plot Coordinates GIS Overlay</span>
+              <span class="text-emerald-600 font-extrabold text-[10px] flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> Click map to update satellite pH & temp</span>
+            </div>
+            <div id="map" class="h-36 rounded-2xl border border-slate-300 z-10 cursor-pointer"></div>
+          </div>
+
+          <button type="button" onclick="requestAdvisory()" id="btnAdvisory" class="w-full bg-gradient-to-r from-kisan-700 to-kisan-600 hover:from-kisan-800 hover:to-kisan-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm">
+            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            <span data-i18n="btn_advisory">Synthesize Smart Advisory</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- CARD 2: Leaf Pathology Scanner -->
+      <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 space-y-4">
+        
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-lg">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base" data-i18n="card2_title">Crop Leaf Pathology AI</h3>
+            <p class="text-xs text-slate-500" data-i18n="card2_sub">Capture camera stream or upload leaf image</p>
+          </div>
+        </div>
+
+        <form id="diagnosticForm" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="crop_species_lbl">Crop Species Target</label>
+            <input type="text" id="cropType" value="Cotton / Groundnut" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs outline-none" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="openCameraModal()" class="p-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md">
+              <i class="fa-solid fa-video text-rose-400"></i>
+              <span data-i18n="btn_camera">Use Live Camera</span>
+            </button>
+            <div class="relative border border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl p-3 text-center cursor-pointer">
+              <input type="file" id="cropImage" accept="image/*" onchange="previewFile()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+              <span class="text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-folder-open text-amber-600"></i> <span data-i18n="btn_gallery">Gallery Upload</span>
+              </span>
+            </div>
+          </div>
+
+          <div id="imagePreviewContainer" class="hidden text-center relative">
+            <img id="imagePreview" src="" class="max-h-44 mx-auto rounded-xl border-2 border-slate-200 shadow-md object-cover" />
+            <span class="bg-slate-900/80 text-white text-[10px] px-2 py-0.5 rounded-full absolute bottom-2 left-1/2 -translate-x-1/2">Photo Loaded</span>
+          </div>
+
+          <button type="button" onclick="runDiagnosis()" id="btnDiagnose" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm">
+            <i class="fa-solid fa-stethoscope text-lg"></i>
+            <span data-i18n="btn_diagnose">Diagnose Crop Leaf Health</span>
+          </button>
+        </form>
+
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: ADVISORY & PATHOLOGY DASHBOARD (7 Cols) -->
+    <section class="lg:col-span-7 space-y-6">
+      
+      <!-- ADVISORY DISPLAY CARD -->
+      <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 min-h-[380px] flex flex-col justify-between relative">
+        <div class="space-y-4">
+          
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-100 pb-3 gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-kisan-100 text-kisan-700 flex items-center justify-center font-bold text-lg">
+                <i class="fa-solid fa-seedling"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base" data-i18n="advisory_heading">Multimodal Advisory Strategy</h3>
+                <p class="text-xs text-slate-500" data-i18n="advisory_sub">Generated dynamically by Gemini 2.5</p>
+              </div>
+            </div>
+
+            <!-- Export & Voice Controls -->
+            <div class="flex items-center gap-2 no-print self-start sm:self-auto flex-wrap">
+              <button type="button" id="btnAwaz" onclick="speakAdvisory()" class="bg-kisan-700 hover:bg-kisan-800 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                <i id="iconAwaz" class="fa-solid fa-volume-high"></i>
+                <span id="textAwaz">AWAZ</span>
+              </button>
+              <button type="button" onclick="shareWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>WhatsApp</span>
+              </button>
+              <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-print"></i>
+                <span data-i18n="print_slip">Print Slip</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="advisoryOutput" class="space-y-4 text-sm">
+            <div class="text-center py-12 space-y-3">
+              <div class="w-16 h-16 bg-kisan-50 text-kisan-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-compass-drafting"></i>
+              </div>
+              <h4 class="font-bold text-slate-700" data-i18n="no_advisory_title">No Advisory Synthesized Yet</h4>
+              <p class="text-xs text-slate-400 max-w-md mx-auto" data-i18n="no_advisory_sub">Click 'Synthesize Smart Advisory' to analyze land metrics, satellite vegetative health, and soil parameters.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Hash Footer -->
+        <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-500 gap-2">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-kisan-600"></i>
+            <span>AgriStack Inter-State Federation: <strong class="text-slate-800">Verified</strong></span>
+          </div>
+          <div class="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+            Hash: <span id="blockHash">0x00000000</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATHOLOGY DIAGNOSTIC CARD -->
+      <div class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 min-h-[260px] no-print">
+        
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-lg">
+            <i class="fa-solid fa-bug"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base" data-i18n="pathology_title">Vision Pathology & Organic Remedies</h3>
+            <p class="text-xs text-slate-500" data-i18n="pathology_sub">Gemini 2.5 Flash Leaf Diagnosis</p>
+          </div>
+        </div>
+
+        <div id="diagnosticOutput" class="text-sm space-y-3">
+          <div class="text-center py-8 space-y-2">
+            <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto text-xl">
+              <i class="fa-solid fa-leaf"></i>
+            </div>
+            <p class="text-xs text-slate-400" data-i18n="pathology_empty">Capture camera or upload leaf photo to get organic remedies and disease diagnostics.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+  </main>
+
+  <!-- CAMERA STREAM MODAL -->
+  <div id="cameraModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-video text-rose-600"></i> Live Leaf Scanner
+        </h3>
+        <button type="button" onclick="closeCameraModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+
+      <div class="relative bg-slate-900 rounded-2xl overflow-hidden h-64 flex items-center justify-center">
+        <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+        <canvas id="webcamCanvas" class="hidden"></canvas>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" onclick="captureCameraSnapshot()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md">
+          <i class="fa-solid fa-camera"></i> Capture Photo
+        </button>
+        <button type="button" onclick="closeCameraModal()" class="px-4 border border-slate-300 text-slate-700 font-bold rounded-xl text-xs">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING AI CHATBOT WIDGET -->
+  <div id="chatFloatingWidget" class="fixed bottom-6 right-6 z-50 no-print">
+    
+    <button onclick="toggleChatWindow()" id="chatToggleBtn" class="bg-gradient-to-r from-kisan-700 to-kisan-600 hover:from-kisan-800 hover:to-kisan-700 text-white p-4 rounded-full shadow-2xl flex items-center gap-3 transition-all transform hover:scale-105 border-2 border-white/30">
+      <div class="relative">
+        <i class="fa-solid fa-robot text-xl"></i>
+        <span class="w-3 h-3 bg-emerald-400 rounded-full absolute -top-1 -right-1 ring-2 ring-white animate-ping"></span>
+      </div>
+      <span class="font-extrabold text-xs tracking-wide hidden sm:inline">Kisan Mitra AI</span>
+    </button>
+
+    <div id="chatPanel" class="hidden fixed bottom-20 right-4 sm:right-6 w-[90vw] sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[460px] transition-all">
+      
+      <!-- CHAT HEADER WITH INTEGRATED LANGUAGE SELECTOR -->
+      <div class="bg-gradient-to-r from-kisan-900 to-kisan-800 text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/30 border border-emerald-400/40 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-robot text-emerald-300 text-sm"></i>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-xs">Kisan Mitra (किसान मित्र)</h4>
+            <p class="text-[10px] text-kisan-200">Powered by Gemini 2.5 Flash</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- CHATBOX LANGUAGE SELECTOR -->
+          <div class="flex items-center gap-1 bg-white/10 backdrop-blur-md px-2 py-1 rounded-xl border border-white/20">
+            <i class="fa-solid fa-language text-emerald-300 text-xs"></i>
+            <select id="chatLangCode" onchange="setLanguage(this.value)" class="bg-transparent text-[11px] font-bold text-white focus:outline-none cursor-pointer">
+              <option value="hi" class="text-slate-900">हिंदी</option>
+              <option value="gu" class="text-slate-900">ગુજરાતી</option>
+              <option value="mr" class="text-slate-900">मराठी</option>
+              <option value="en" class="text-slate-900">English</option>
+            </select>
+          </div>
+          <button onclick="toggleChatWindow()" class="text-slate-300 hover:text-white text-lg ml-1">&times;</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-2 border-b border-slate-200 flex gap-1.5 overflow-x-auto text-[10px]">
+        <button onclick="sendQuickPrompt('जीवामृत बनाने की पूरी विधि क्या है?')" class="bg-white border text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-emerald-50 font-medium">🌿 जीवामृत विधि</button>
+        <button onclick="sendQuickPrompt('फसल में सिंचाई करने का सही समय क्या है?')" class="bg-white border text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-emerald-50 font-medium">💧 सिंचाई का समय</button>
+        <button onclick="sendQuickPrompt('कपास में जैविक कीट नियंत्रण के लिए नीम स्प्रे कैसे बनाएं?')" class="bg-white border text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-emerald-50 font-medium">🐛 नीम स्प्रे</button>
+      </div>
+
+      <div id="chatMessages" class="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
+        <div class="bg-slate-100 p-3 rounded-2xl max-w-[85%] space-y-1">
+          <p class="font-bold text-kisan-900 text-[10px]">Kisan Mitra AI</p>
+          <p class="text-slate-700">नमस्ते! मैं आपका किसान मित्र AI सहायक हूँ। आपकी मिट्टी, तापमान और फसल के अनुसार आपके हर प्रश्न का उत्तर देने के लिए तैयार हूँ। पूछें!</p>
+        </div>
+      </div>
+
+      <div class="p-3 border-t bg-slate-50 flex gap-2">
+        <input type="text" id="chatInput" placeholder="Ask Kisan Mitra AI..." onkeypress="handleChatKeyPress(event)" class="flex-1 p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-kisan-600 outline-none" />
+        <button onclick="sendChatMessage()" id="btnSendChat" class="bg-kisan-700 hover:bg-kisan-800 text-white px-4 rounded-xl font-bold text-xs shadow-md">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript Logic & Full Page i18n Dictionary -->
+  <script>
+    const API_BASE = window.location.origin;
+    let map, marker;
+    let cameraStream = null;
+    let latestAdvisoryText = "";
+    let speechUtterance = null;
+    let isSpeaking = false;
+    let currentLang = "hi";
+
+    const STATE_COORDINATES = {
+      "IN-GJ": [23.0225, 72.5714],
+      "IN-PB": [30.9010, 75.8573],
+      "IN-MH": [19.0948, 74.7496],
+      "IN-KA": [12.3118, 76.6551]
+    };
+
+    const TRANSLATIONS = {
+      en: {
+        brand_sub: "Interoperable AI Agronomy & Vision Diagnostics",
+        card1_title: "AgriStack Identity & Soil Profile",
+        card1_sub: "Select or type Farmer ID to auto-sync registry",
+        preset_label: "Preset Farmer Records",
+        farmer_id_lbl: "Farmer ID",
+        state_node_lbl: "State Node",
+        verified_badge: "Registry Verified",
+        land_holding_lbl: "Land Holding",
+        history_lbl: "History",
+        soil_type_lbl: "Types of Soil",
+        crop_quality_lbl: "Crop Quality Target",
+        ndvi_lbl: "Crop Health Index (NDVI)",
+        oc_lbl: "Organic Carbon %",
+        gis_lbl: "Plot Coordinates GIS Overlay",
+        btn_advisory: "Synthesize Smart Advisory",
+        card2_title: "Crop Leaf Pathology AI",
+        card2_sub: "Capture camera stream or upload leaf image",
+        crop_species_lbl: "Crop Species Target",
+        btn_camera: "Use Live Camera",
+        btn_gallery: "Gallery Upload",
+        btn_diagnose: "Diagnose Crop Leaf Health",
+        advisory_heading: "Multimodal Advisory Strategy",
+        advisory_sub: "Generated dynamically by Gemini 2.5",
+        print_slip: "Print Slip",
+        no_advisory_title: "No Advisory Synthesized Yet",
+        no_advisory_sub: "Click 'Synthesize Smart Advisory' to analyze land metrics, satellite vegetative health, and soil parameters.",
+        pathology_title: "Vision Pathology & Organic Remedies",
+        pathology_sub: "Gemini 2.5 Flash Leaf Diagnosis",
+        pathology_empty: "Capture camera or upload leaf photo to get organic remedies and disease diagnostics.",
+        chat_placeholder: "Ask Kisan Mitra AI...",
+        chat_greeting: "Hello! I am your Kisan Mitra AI assistant. Ready to answer your questions based on your specific soil and weather!"
+      },
+      hi: {
+        brand_sub: "इंटरऑपरेबल एआई कृषि विज्ञान और दृष्टि निदान",
+        card1_title: "एग्रीस्टैक पहचान और मृदा प्रोफाइल",
+        card1_sub: "रजिस्ट्री सिंक करने के लिए किसान आईडी चुनें या टाइप करें",
+        preset_label: "पूर्वनिर्धारित किसान रिकॉर्ड",
+        farmer_id_lbl: "किसान आईडी",
+        state_node_lbl: "राज्य नोड",
+        verified_badge: "रजिस्ट्री सत्यापित",
+        land_holding_lbl: "भूमि धारिता",
+        history_lbl: "इतिहास",
+        soil_type_lbl: "मिट्टी के प्रकार",
+        crop_quality_lbl: "फसल गुणवत्ता लक्ष्य",
+        ndvi_lbl: "फसल स्वास्थ्य सूचकांक (NDVI)",
+        oc_lbl: "जैविक कार्बन %",
+        gis_lbl: "प्लॉट निर्देशांक जीआईएस ओवरले",
+        btn_advisory: "स्मार्ट सलाह तैयार करें",
+        card2_title: "फसल पत्ती रोग विज्ञान एआई",
+        card2_sub: "कैमरा से फोटो लें या पत्ती की छवि अपलोड करें",
+        crop_species_lbl: "लक्ष्य फसल प्रजाति",
+        btn_camera: "लाइव कैमरा उपयोग करें",
+        btn_gallery: "गैलरी से अपलोड करें",
+        btn_diagnose: "फसल पत्ती स्वास्थ्य जांचें",
+        advisory_heading: "मल्टीमॉडल परामर्श रणनीति",
+        advisory_sub: "जेमिनी 2.5 द्वारा संचालित",
+        print_slip: "पर्ची प्रिंट करें",
+        no_advisory_title: "अभी तक कोई सलाह तैयार नहीं की गई",
+        no_advisory_sub: "भूमि मेट्रिक्स, उपग्रह वनस्पति स्वास्थ्य और मृदा मापदंडों का विश्लेषण करने के लिए 'स्मार्ट सलाह तैयार करें' पर क्लिक करें।",
+        pathology_title: "दृश्य रोग विज्ञान और जैविक उपचार",
+        pathology_sub: "जेमिनी 2.5 फ्लैश पत्ती निदान",
+        pathology_empty: "जैविक उपचार और बीमारी निदान प्राप्त करने के लिए फोटो कैप्चर करें या अपलोड करें।",
+        chat_placeholder: "किसान मित्र एआई से पूछें...",
+        chat_greeting: "नमस्ते! मैं आपका किसान मित्र AI सहायक हूँ। आपकी मिट्टी, तापमान और फसल के अनुसार उत्तर देने के लिए तैयार हूँ।"
+      },
+      gu: {
+        brand_sub: "ઇન્ટરઓપરેબલ AI કૃષિ વિજ્ઞાન અને વિઝન નિદાન",
+        card1_title: "એગ્રીસ્ટેક ઓળખ અને જમીન પ્રોફાઇલ",
+        card1_sub: "રજિસ્ટ્રી સિંક કરવા માટે ખેડૂત આઈડી પસંદ કરો અથવા ટાઈપ કરો",
+        preset_label: "પૂર્વ-સેટ ખેડૂત રેકોર્ડ્સ",
+        farmer_id_lbl: "ખેડૂત આઈડી",
+        state_node_lbl: "રાજ્ય નોડ",
+        verified_badge: "રજિસ્ટ્રી ચકાસાયેલ",
+        land_holding_lbl: "જમીન ધારણ",
+        history_lbl: "ઇતિહાસ",
+        soil_type_lbl: "જમીનના પ્રકાર",
+        crop_quality_lbl: "પાક ગુણવત્તા લક્ષ્ય",
+        ndvi_lbl: "પાક સ્વાસ્થ્ય સૂચકઆંક (NDVI)",
+        oc_lbl: "જૈવિક કાર્બન %",
+        gis_lbl: "પ્લોટ કોઓર્ડિનેટ્સ જીઆઈએસ ઓવરલે",
+        btn_advisory: "સ્માર્ટ સલાહ તૈયાર કરો",
+        card2_title: "પાક પર્ણ રોગ વિજ્ઞાન AI",
+        card2_sub: "કેમેરાથી ફોટો લો અથવા પર્ણની છબી અપલોડ કરો",
+        crop_species_lbl: "લક્ષ્ય પાક પ્રજાતિ",
+        btn_camera: "લાઈવ કેમેરા વાપરો",
+        btn_gallery: "ગેલેરીમાંથી અપલોડ કરો",
+        btn_diagnose: "પાક પર્ણ સ્વાસ્થ્ય તપાસો",
+        advisory_heading: "મલ્ટીમોડલ સલાહકાર વ્યૂહરચના",
+        advisory_sub: "જેમિની 2.5 દ્વારા સંચાલિત",
+        print_slip: "પ્રિન્ટ સ્લિપ",
+        no_advisory_title: "હજુ સુધી કોઈ સલાહ તૈયાર નથી થઈ",
+        no_advisory_sub: "જમીનના મેટ્રિક્સ અને પાક સ્વાસ્થ્યનું વિશ્લેષણ કરવા માટે 'સ્માર્ટ સલાહ તૈયાર કરો' પર ક્લિક કરો.",
+        pathology_title: "વિઝન રોગ વિજ્ઞાન અને જૈવિક ઉપચાર",
+        pathology_sub: "જેમિની 2.5 ફ્લેશ પર્ણ નિદાન",
+        pathology_empty: "જૈવિક ઉપચાર અને રોગ નિદાન મેળવવા માટે ફોટો લો અથવા અપલોડ કરો.",
+        chat_placeholder: "કિસાન મિત્ર AI ને પૂછો...",
+        chat_greeting: "નમસ્તે! હું તમારો કિસાન મિત્ર AI સહાયક છું. તમારી જમીન અને હવામાન મુજબ ઉત્તર આપવા માટે તૈયાર છું!"
+      },
+      mr: {
+        brand_sub: "इंटरऑपरेबल एआय कृषी विज्ञान आणि व्हिजन निदान",
+        card1_title: "ॲग्रीस्टॅक ओळख आणि माती प्रोफाइल",
+        card1_sub: "रजिस्ट्री सिंक करण्यासाठी शेतकरी आयडी निवडा किंवा टाईप करा",
+        preset_label: "पूर्व-सेट शेतकरी नोंदी",
+        farmer_id_lbl: "शेतकरी आयडी",
+        state_node_lbl: "राज्य नोड",
+        verified_badge: "रजिस्ट्री सत्यापित",
+        land_holding_lbl: "जमीन धारणा",
+        history_lbl: "इतिहास",
+        soil_type_lbl: "मातीचे प्रकार",
+        crop_quality_lbl: "पीक गुणवत्ता लक्ष्य",
+        ndvi_lbl: "पीक आरोग्य निर्देशांक (NDVI)",
+        oc_lbl: "सेंद्रिय कार्बन %",
+        gis_lbl: "प्लॉट अक्षांश-रेखांश जीआयएस ओव्हरले",
+        btn_advisory: "स्मार्ट सल्ला तयार करा",
+        card2_title: "पीक पान रोगनिदान एआय",
+        card2_sub: "कॅमेऱ्याने फोटो घ्या किंवा पानाचे चित्र अपलोड करा",
+        crop_species_lbl: "लक्ष्य पीक प्रजाती",
+        btn_camera: "थेट कॅमेरा वापरा",
+        btn_gallery: "गॅलरीतून अपलोड करा",
+        btn_diagnose: "पीक पानांचे आरोग्य तपासा",
+        advisory_heading: "मल्टीमॉडेल सल्लागार धोरण",
+        advisory_sub: "जेमिनी 2.5 द्वारे संचलित",
+        print_slip: "प्रिंट स्लिप",
+        no_advisory_title: "अद्याप कोणताही सल्ला तयार केलेला नाही",
+        no_advisory_sub: "जमिनीचे निकष आणि पिकांचे आरोग्य विश्लेषित करण्यासाठी 'स्मार्ट सल्ला तयार करा' वर क्लिक करा.",
+        pathology_title: "व्हिजन रोगनिदान आणि सेंद्रिय उपाय",
+        pathology_sub: "जेमिनी 2.5 फ्लॅश पान निदान",
+        pathology_empty: "सेंद्रिय उपाय आणि रोगनिदान मिळवण्यासाठी फोटो घ्या किंवा अपलोड करा.",
+        chat_placeholder: "किसान मित्र एआय ला विचारा...",
+        chat_greeting: "नमस्कार! मी तुमचा किसान मित्र AI सहाय्यक आहे. तुमच्या जमिनीनुसार आणि हवामानानुसार उत्तरे देण्यास तयार आहे!"
+      }
+    };
+
+    window.onload = function() {
+      map = L.map('map').setView([23.0225, 72.5714], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+      marker = L.marker([23.0225, 72.5714], { draggable: true }).addTo(map).bindPopup("Plot Boundary: FID-8839201");
+      
+      map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        fetchSatelliteTelemetry(e.latlng.lat, e.latlng.lng);
+      });
+
+      marker.on('dragend', function(e) {
+        const coords = e.target.getLatLng();
+        fetchSatelliteTelemetry(coords.lat, coords.lng);
+      });
+
+      fetchFarmerRegistry();
+      setLanguage('hi');
+    };
+
+    function onStateChange() {
+      const state = document.getElementById("stateCode").value;
+      const coords = STATE_COORDINATES[state] || [23.0225, 72.5714];
+      if (map && marker) {
+        map.setView(coords, 11);
+        marker.setLatLng(coords).setPopupContent(`State Node: ${state}`).openPopup();
+      }
+      fetchSatelliteTelemetry(coords[0], coords[1]);
+    }
+
+    async function fetchSatelliteTelemetry(lat, lon) {
+      document.getElementById("liveTemp").innerText = "Syncing...";
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/telemetry?lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+        
+        const temp = data.temperature_c || 31.5;
+        const ph = data.soil_ph || 6.8;
+
+        document.getElementById("liveTemp").innerText = `${temp}°C`;
+        document.getElementById("tempOverride").value = temp;
+        document.getElementById("phVal").value = ph;
+
+        marker.setPopupContent(`Satellite Coords: [${lat.toFixed(4)}, ${lon.toFixed(4)}]<br>Temp: ${temp}°C | Soil pH: ${ph}`).openPopup();
+      } catch(e) {
+        console.error("Satellite telemetry fetch error", e);
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      
+      const headerSelect = document.getElementById("headerLangCode");
+      const chatSelect = document.getElementById("chatLangCode");
+      if (headerSelect) headerSelect.value = lang;
+      if (chatSelect) chatSelect.value = lang;
+
+      const langDict = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (langDict[key]) {
+          el.innerText = langDict[key];
+        }
+      });
+
+      const chatInput = document.getElementById("chatInput");
+      if (chatInput && langDict.chat_placeholder) {
+        chatInput.placeholder = langDict.chat_placeholder;
+      }
+
+      updateChatUIForLanguage(lang);
+    }
+
+    function updateChatUIForLanguage(lang) {
+      const quickPrompts = {
+        "hi": [
+          { text: "🌿 जीवामृत विधि", prompt: "मेरी मिट्टी और तापमान के अनुसार जीवामृत बनाने की विधि बताओ?" },
+          { text: "💧 सिंचाई समय", prompt: "मेरी फसल में सिंचाई करने का सही समय क्या है?" },
+          { text: "🐛 नीम स्प्रे", prompt: "जैविक कीट नियंत्रण के लिए नीम स्प्रे कैसे तैयार करें?" }
+        ],
+        "gu": [
+          { text: "🌿 જીવામૃત રેસિપી", prompt: "મારી જમીન અને તાપમાન મુજબ જીવામૃત બનાવવાની રીત બતાવો?" },
+          { text: "💧 સિંચાઈ ટાઈમિંગ", prompt: "પાકમાં સિંચાઈ કરવાનો યોગ્ય સમય કયો છે?" },
+          { text: "🐛 લીમડાનો સ્પ્રે", prompt: "જૈવિક કીટ નિયંત્રણ માટે લીમડાનો અર્ક કેવી રીતે બનાવવો?" }
+        ],
+        "mr": [
+          { text: "🌿 जीवामृत कृती", prompt: "माझ्या मातीनुसार जीवामृत बनवण्याची पद्धत सांगा?" },
+          { text: "💧 सिंचन वेळ", prompt: "पिकाला पाणी देण्याची योग्य वेळ कोणती?" },
+          { text: "🐛 निंबोळी फवारणी", prompt: "कीड नियंत्रणासाठी निंबोळी अर्क कसा बनवावा?" }
+        ],
+        "en": [
+          { text: "🌿 Jeevamrut Recipe", prompt: "How to prepare Jeevamrut for my specific soil type?" },
+          { text: "💧 Irrigation Timing", prompt: "When is the best time for irrigation at current temperature?" },
+          { text: "🐛 Neem Spray", prompt: "How to prepare organic neem oil spray for pest control?" }
+        ]
+      };
+
+      const langDict = TRANSLATIONS[lang] || TRANSLATIONS['en'];
+      const chatMessages = document.getElementById("chatMessages");
+      chatMessages.innerHTML = `
+        <div class="bg-slate-100 p-3 rounded-2xl max-w-[85%] space-y-1">
+          <p class="font-bold text-kisan-900 text-[10px]">Kisan Mitra AI</p>
+          <p class="text-slate-700">${langDict.chat_greeting}</p>
+        </div>
+      `;
+
+      const prompts = quickPrompts[lang] || quickPrompts['en'];
+      const suggestionsBox = document.querySelector("#chatPanel .bg-slate-50.p-2");
+      if (suggestionsBox) {
+        suggestionsBox.innerHTML = prompts.map(p => `
+          <button onclick="sendQuickPrompt('${p.prompt}')" class="bg-white border text-slate-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-emerald-50 font-medium">${p.text}</button>
+        `).join('');
+      }
+    }
+
+    async function fetchFarmerRegistry() {
+      const fid = document.getElementById("farmerId").value;
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/farmer/${fid}`);
+        const data = await res.json();
+        if (data.found) {
+          const r = data.record;
+          document.getElementById("regName").innerText = r.farmer_name;
+          document.getElementById("regAcres").innerText = `${r.land_acres} Acres`;
+          document.getElementById("regCrop").innerText = r.crop_history;
+          document.getElementById("stateCode").value = r.state_code;
+          if (r.soil_type) document.getElementById("soilType").value = r.soil_type;
+          document.getElementById("ocVal").value = r.organic_carbon;
+          document.getElementById("ndviVal").value = r.ndvi;
+          updateSliders();
+
+          if (r.coordinates) {
+            map.setView(r.coordinates, 12);
+            marker.setLatLng(r.coordinates).setPopupContent(`Plot: ${fid} (${r.farmer_name})`);
+            fetchSatelliteTelemetry(r.coordinates[0], r.coordinates[1]);
+          }
+        }
+      } catch(e) { console.error("Registry fetch error", e); }
+    }
+
+    function selectFarmer(fid) {
+      document.getElementById("farmerId").value = fid;
+      fetchFarmerRegistry();
+    }
+
+    function updateSliders() {
+      const val = parseFloat(document.getElementById("ndviVal").value);
+      const display = document.getElementById("ndviDisplay");
+      if (val >= 0.6) {
+        display.innerText = `${val} (Healthy Crop)`;
+        display.className = "text-kisan-700 font-extrabold";
+      } else if (val >= 0.3) {
+        display.innerText = `${val} (Moderate Biomass)`;
+        display.className = "text-amber-600 font-extrabold";
+      } else {
+        display.innerText = `${val} (Low Biomass / Stress)`;
+        display.className = "text-rose-600 font-extrabold";
+      }
+    }
+
+    async function openCameraModal() {
+      const modal = document.getElementById("cameraModal");
+      const video = document.getElementById("webcamVideo");
+      modal.classList.remove("hidden");
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = cameraStream;
+      } catch(err) {
+        alert("Camera access denied or unverified: " + err.message);
+        closeCameraModal();
+      }
+    }
+
+    function closeCameraModal() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById("cameraModal").classList.add("hidden");
+    }
+
+    function captureCameraSnapshot() {
+      const video = document.getElementById("webcamVideo");
+      const canvas = document.getElementById("webcamCanvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob(blob => {
+        const file = new File([blob], "camera_snapshot.jpg", { type: "image/jpeg" });
+        const container = new DataTransfer();
+        container.items.add(file);
+        document.getElementById("cropImage").files = container.files;
+        previewFile();
+        closeCameraModal();
+      }, "image/jpeg");
+    }
+
+    function previewFile() {
+      const file = document.getElementById("cropImage").files[0];
+      const preview = document.getElementById("imagePreview");
+      const container = document.getElementById("imagePreviewContainer");
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        preview.src = reader.result;
+        container.classList.remove("hidden");
+      };
+      if (file) reader.readAsDataURL(file);
+    }
+
+    async function requestAdvisory() {
+      stopSpeech();
+
+      const btn = document.getElementById("btnAdvisory");
+      const output = document.getElementById("advisoryOutput");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin text-lg"></i> <span>Synthesize Strategy...</span>`;
+
+      const currentLatLng = marker ? marker.getLatLng() : { lat: 23.0225, lng: 72.5714 };
+      const stateVal = document.getElementById("stateCode")?.value || "IN-GJ";
+      const soilVal = document.getElementById("soilType")?.value || "Alluvial Soil";
+      const qualityVal = document.getElementById("cropQuality")?.value || "Grade A (Export / Premium)";
+      const tempVal = parseFloat(document.getElementById("tempOverride")?.value) || 31.5;
+      const phVal = parseFloat(document.getElementById("phVal")?.value) || 6.8;
+      const ocVal = parseFloat(document.getElementById("ocVal")?.value) || 0.75;
+      const ndviVal = parseFloat(document.getElementById("ndviVal")?.value) || 0.68;
+
+      const payload = {
+        version: "2026.1",
+        state_code: stateVal,
+        farmer_id: document.getElementById("farmerId")?.value || "FID-8839201",
+        crop_quality_target: qualityVal,
+        plot_geometry_geojson: { type: "Point", coordinates: [currentLatLng.lng, currentLatLng.lat] },
+        soil_profile: {
+          soil_type: soilVal,
+          ph_level: phVal,
+          organic_carbon_percentage: ocVal
+        },
+        remote_sensing_data: {
+          ndvi: ndviVal
+        },
+        weather_context: {
+          temperature_c: tempVal
+        }
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/advisory?language=${currentLang}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const rawText = await res.text();
+        let data = {};
+        try {
+          data = JSON.parse(rawText);
+        } catch(e) {
+          console.warn("Raw response was not JSON:", rawText);
+        }
+
+        if (!res.ok) {
+          const errMessage = data.detail?.[0]?.msg || data.detail || data.message || rawText || `HTTP Error ${res.status}`;
+          throw new Error(errMessage);
+        }
+
+        const farmerName = data.farmer_name || "Farmer";
+        const landAcres = data.land_holding_acres || "3.5";
+        const recCrop = data.recommended_crop || "Recommended Crop";
+        const advisoryNote = data.localized_advisory_text || "Advisory synthesized.";
+        const waterStrategy = data.water_conservation_strategy || "Drip Irrigation Schedule";
+        const fertilizerRec = data.fertilizer_blend_recommendation || "Bio-NPK Fertilizer";
+        const qualityProtocol = data.quality_compliance_protocol || "Export Quality Control";
+        const langCode = data.language_code || currentLang;
+
+        latestAdvisoryText = `${recCrop}: ${advisoryNote}`;
+
+        output.innerHTML = `
+          <div class="bg-gradient-to-r from-kisan-800 to-kisan-700 text-white p-4.5 rounded-2xl shadow-md space-y-2">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <span class="bg-emerald-400/20 text-emerald-200 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-emerald-400/30">AgriStack DPI Multi-Factor Advisory</span>
+              <span class="text-xs text-kisan-200 font-mono font-bold">${farmerName} (${landAcres} Acres)</span>
+            </div>
+            
+            <h3 class="text-xl font-extrabold text-emerald-100">${recCrop}</h3>
+            
+            <div class="flex flex-wrap gap-1.5 pt-1 text-[10px] font-bold">
+              <span class="bg-white/10 px-2 py-0.5 rounded-md text-emerald-200 border border-white/10">📍 Coords: [${currentLatLng.lat.toFixed(2)}, ${currentLatLng.lng.toFixed(2)}]</span>
+              <span class="bg-white/10 px-2 py-0.5 rounded-md text-emerald-200 border border-white/10">🌱 ${soilVal} (pH ${phVal})</span>
+              <span class="bg-white/10 px-2 py-0.5 rounded-md text-emerald-200 border border-white/10">🎯 ${qualityVal}</span>
+              <span class="bg-white/10 px-2 py-0.5 rounded-md text-emerald-200 border border-white/10">☀️ ${tempVal}°C | NDVI ${ndviVal}</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-200 text-xs space-y-1">
+            <h4 class="font-bold text-kisan-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-bullhorn text-kisan-600"></i> Localized Field Note (${langCode.toUpperCase()})
+            </h4>
+            <p class="text-slate-800 font-medium leading-relaxed">${advisoryNote}</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+            <div class="p-3 border rounded-xl bg-blue-50/60 border-blue-200 space-y-1">
+              <strong class="text-blue-900 flex items-center gap-1 text-[11px] font-extrabold">
+                <i class="fa-solid fa-droplet text-blue-600"></i> Irrigation Strategy
+              </strong>
+              <p class="text-slate-700 font-medium leading-tight">${waterStrategy}</p>
+            </div>
+
+            <div class="p-3 border rounded-xl bg-amber-50/60 border-amber-200 space-y-1">
+              <strong class="text-amber-900 flex items-center gap-1 text-[11px] font-extrabold">
+                <i class="fa-solid fa-flask-vial text-amber-600"></i> Soil & Bio-Nutrients
+              </strong>
+              <p class="text-slate-700 font-medium leading-tight">${fertilizerRec}</p>
+            </div>
+
+            <div class="p-3 border rounded-xl bg-purple-50/60 border-purple-200 space-y-1">
+              <strong class="text-purple-900 flex items-center gap-1 text-[11px] font-extrabold">
+                <i class="fa-solid fa-award text-purple-600"></i> Quality Target Protocol
+              </strong>
+              <p class="text-slate-700 font-medium leading-tight">${qualityProtocol}</p>
+            </div>
+          </div>
+        `;
+
+        federateData(payload);
+      } catch(err) {
+        output.innerHTML = `<div class="p-3 bg-rose-50 border text-rose-700 text-xs rounded-xl">Error generating advisory: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-lg"></i> <span>Synthesize Smart Advisory</span>`;
+      }
+    }
+
+    async function federateData(payload) {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/network/federate`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        document.getElementById("blockHash").innerText = d.network_block_hash;
+      } catch(e){}
+    }
+
+    // DIAGNOSIS WITH STRICT LEAF VERIFICATION
+    async function runDiagnosis() {
+      const btn = document.getElementById("btnDiagnose");
+      const output = document.getElementById("diagnosticOutput");
+      const fileInput = document.getElementById("cropImage");
+
+      if (!fileInput.files[0]) {
+        alert("Please capture a photo using live camera or upload a leaf image.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin text-lg"></i> <span>Analyzing Leaf Vision...</span>`;
+
+      const formData = new FormData();
+      formData.append("crop_type", document.getElementById("cropType").value);
+      formData.append("image", fileInput.files[0]);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/diagnose`, { method: "POST", body: formData });
+        const rawText = await res.text();
+        let data = {};
+        try { data = JSON.parse(rawText); } catch(e){}
+
+        // STRICT CHECK: IF NOT A LEAF, BLOCK OUTPUT AND SHOW ALERT
+        if (data.is_plant_leaf === false || data.warning_message) {
+          output.innerHTML = `
+            <div class="bg-rose-50 border-2 border-rose-400 p-5 rounded-2xl space-y-2 shadow-md">
+              <div class="flex items-center gap-2.5 text-rose-800 font-extrabold text-sm">
+                <i class="fa-solid fa-triangle-exclamation text-rose-600 text-xl"></i>
+                <span>Invalid Image: No Crop Leaf Detected</span>
+              </div>
+              <p class="text-xs text-rose-700 leading-relaxed font-semibold">
+                ${data.warning_message || "The uploaded photo is not a plant leaf. Please capture or upload a clear photo of an affected plant leaf."}
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        output.innerHTML = `
+          <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-rose-600 uppercase tracking-widest block">Species: ${data.plant_species || 'Crop Foliage'}</span>
+              <h4 class="font-extrabold text-slate-900 text-base">${data.disease_identified || 'Healthy Crop'}</h4>
+            </div>
+            <div class="text-right">
+              <span class="bg-rose-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm">
+                Severity: ${data.severity_level || 'Low'}
+              </span>
+              <span class="block text-[10px] text-slate-500 font-bold mt-1">Confidence: ${((data.confidence_score || 0.9) * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+            <div class="p-3 border rounded-xl bg-emerald-50/50 border-emerald-200 space-y-1">
+              <strong class="text-emerald-800 block flex items-center gap-1"><i class="fa-solid fa-leaf"></i> Organic Remedies</strong>
+              <ul class="list-disc list-inside text-slate-700 space-y-0.5">
+                ${(data.organic_remediation || ["Apply sour buttermilk solution", "Spray 5% NSKE Neem extract"]).map(i => `<li>${i}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="p-3 border rounded-xl bg-slate-50 border-slate-200 space-y-1">
+              <strong class="text-slate-800 block flex items-center gap-1"><i class="fa-solid fa-shield-virus"></i> Prevention & Controls</strong>
+              <ul class="list-disc list-inside text-slate-600 space-y-0.5">
+                ${(data.preventative_measures || ["Ensure proper crop spacing", "Avoid over-irrigation"]).map(i => `<li>${i}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+      } catch(err) {
+        output.innerHTML = `<div class="p-3 bg-rose-50 border text-rose-600 text-xs rounded-xl">Diagnostic Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-stethoscope text-lg"></i> <span>Diagnose Crop Leaf Health</span>`;
+      }
+    }
+
+    function shareWhatsApp() {
+      const text = document.getElementById("advisoryOutput").innerText;
+      if (!text || text.includes("No Advisory Synthesized Yet")) {
+        alert("Please synthesize an advisory first.");
+        return;
+      }
+      const encodedMsg = encodeURIComponent(`🌾 *AgriStack Official Advisory Slip*\n\n${text}\n\n_Generated via AgriSamarth DPI Network_`);
+      window.open(`https://api.whatsapp.com/send?text=${encodedMsg}`, "_blank");
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      isSpeaking = false;
+      resetAwazButton();
+    }
+
+    function speakAdvisory() {
+      if (!('speechSynthesis' in window)) {
+        alert("Text-to-speech is not supported in this browser.");
+        return;
+      }
+
+      if (isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        stopSpeech();
+        return;
+      }
+
+      const advisoryOutput = document.getElementById("advisoryOutput");
+      if (!advisoryOutput) return;
+      const text = advisoryOutput.innerText;
+
+      if (!text || text.includes("No Advisory Synthesized Yet")) {
+        alert("Please synthesize an advisory first.");
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      speechUtterance = new SpeechSynthesisUtterance(text);
+      
+      const langMap = { hi: "hi-IN", gu: "gu-IN", mr: "mr-IN", en: "en-US" };
+      speechUtterance.lang = langMap[currentLang] || "hi-IN";
+      speechUtterance.rate = 0.95;
+
+      speechUtterance.onstart = function() {
+        isSpeaking = true;
+        const btnText = document.getElementById("textAwaz");
+        const btnIcon = document.getElementById("iconAwaz");
+        if (btnText && btnIcon) {
+          btnText.innerText = "STOP";
+          btnIcon.className = "fa-solid fa-circle-stop text-rose-300 animate-pulse";
+        }
+      };
+
+      speechUtterance.onend = function() {
+        stopSpeech();
+      };
+
+      speechUtterance.onerror = function() {
+        stopSpeech();
+      };
+
+      window.speechSynthesis.speak(speechUtterance);
+    }
+
+    function resetAwazButton() {
+      const btnText = document.getElementById("textAwaz");
+      const btnIcon = document.getElementById("iconAwaz");
+      if (btnText && btnIcon) {
+        btnText.innerText = "AWAZ";
+        btnIcon.className = "fa-solid fa-volume-high";
+      }
+    }
+
+    function toggleChatWindow() {
+      const panel = document.getElementById("chatPanel");
+      panel.classList.toggle("hidden");
+    }
+
+    function handleChatKeyPress(e) {
+      if (e.key === "Enter") sendChatMessage();
+    }
+
+    function sendQuickPrompt(promptText) {
+      document.getElementById("chatInput").value = promptText;
+      sendChatMessage();
+    }
+
+    // ADVANCED AI CHAT SENDER PASSING FULL ACTIVE INPUT METRICS
+    async function sendChatMessage() {
+      const input = document.getElementById("chatInput");
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const chatMessages = document.getElementById("chatMessages");
+      
+      chatMessages.innerHTML += `
+        <div class="bg-kisan-700 text-white p-3 rounded-2xl max-w-[85%] ml-auto space-y-1">
+          <p class="font-bold text-[10px] text-kisan-200">You</p>
+          <p>${msg}</p>
+        </div>
+      `;
+      input.value = "";
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      const loadingId = `chat-loading-${Date.now()}`;
+      chatMessages.innerHTML += `
+        <div id="${loadingId}" class="bg-slate-100 p-3 rounded-2xl max-w-[85%] space-y-1">
+          <p class="font-bold text-kisan-900 text-[10px]">Kisan Mitra AI</p>
+          <p class="text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-circle-notch animate-spin"></i> Analyzing your soil & question...</p>
+        </div>
+      `;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        const fid = document.getElementById("farmerId")?.value || "FID-8839201";
+        const stateVal = document.getElementById("stateCode")?.value || "IN-GJ";
+        const soilVal = document.getElementById("soilType")?.value || "Alluvial Soil";
+        const tempVal = parseFloat(document.getElementById("tempOverride")?.value) || 31.5;
+        const phVal = parseFloat(document.getElementById("phVal")?.value) || 6.8;
+
+        const res = await fetch(`${API_BASE}/api/v1/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: msg,
+            farmer_id: fid,
+            language: currentLang,
+            context_advisory: latestAdvisoryText,
+            state_code: stateVal,
+            soil_type: soilVal,
+            temperature_c: tempVal,
+            soil_ph: phVal,
+            recommended_crop: document.getElementById("cropType")?.value || ""
+          })
+        });
+        const rawText = await res.text();
+        let data = {};
+        try { data = JSON.parse(rawText); } catch(e){}
+        
+        document.getElementById(loadingId).outerHTML = `
+          <div class="bg-slate-100 p-3 rounded-2xl max-w-[85%] space-y-1">
+            <p class="font-bold text-kisan-900 text-[10px]">Kisan Mitra AI</p>
+            <p class="text-slate-700 leading-relaxed">${data.reply || "Thinking..."}</p>
+          </div>
+        `;
+      } catch(e) {
+        document.getElementById(loadingId).outerHTML = `
+          <div class="bg-rose-50 p-3 rounded-2xl max-w-[85%] space-y-1 border border-rose-200">
+            <p class="font-bold text-rose-700 text-[10px]">Error</p>
+            <p class="text-rose-600">Failed to connect to chat assistant.</p>
+          </div>
+        `;
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  </script>
+</body>
+</html>
